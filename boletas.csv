@@ -1,4 +1,4 @@
-﻿Numero de cheque;Vencimiento;Importe del cheque;Importe antes de aranceles e IVA;Codigo de boleto;Fecha de boleto;Importe a acreditar;Importe diferencia;Diferencia (antes - acreditar);Resta: Importe diferencia - Diferencia (antes - acreditar)
+﻿Numero de cheque;Vencimiento;Importe del cheque;Importe antes de aranceles e IVA;Codigo de boleto;Fecha de boleto;Importe a acreditar;TOTAL CARGA;IVA;SIN IVA
 ECHEQ 12417;17/09/2025;85500000,00;80224935,73;BOL 2025028615;18/08/2025;80022826,45;5477173,55;202109,28;5275064,27
 ECHEQ 12443;25/09/2025;218000000,00;206139896,37;BOL 2025030528;01/09/2025;205688632,68;12311367,32;451263,69;11860103,63
 ECHEQ 12444;30/09/2025;218000000,00;204945267,22;BOL 2025030532;01/09/2025;204445952,57;13554047,43;499314,65;13054732,78

@@ -81,9 +81,9 @@ def extract_from_text(text: str) -> dict[str, str]:
         "Codigo de boleto": "",
         "Fecha de boleto": "",
         "Importe a acreditar": "",
-        "Importe diferencia": "",
-        "Diferencia (antes - acreditar)": "",
-        "Resta: Importe diferencia - Diferencia (antes - acreditar)": "",
+        "TOTAL CARGA": "",
+        "IVA": "",
+        "SIN IVA": "",
     }
 
     # Vencimiento (línea completa) y número de ECHEQ
@@ -170,30 +170,35 @@ def extract_from_text(text: str) -> dict[str, str]:
             format_amount_ar_plain(val) if val is not None else pre_raw.strip()
         )
 
-    # Diferencia
+    # Cálculos
     v_cheque = parse_amount_ar(data["Importe del cheque"])
     v_acred = parse_amount_ar(data["Importe a acreditar"])
     if v_cheque is not None and v_acred is not None:
-        data["Importe diferencia"] = format_amount_ar_plain(v_cheque - v_acred)
+        data["TOTAL CARGA"] = format_amount_ar_plain(v_cheque - v_acred)
 
     # Diferencia (antes - acreditar)
     v_pre = parse_amount_ar(data["Importe antes de aranceles e IVA"])
     if v_pre is not None and v_acred is not None:
-        data["Diferencia (antes - acreditar)"] = format_amount_ar_plain(v_pre - v_acred)
+        data["IVA"] = format_amount_ar_plain(v_pre - v_acred)
 
-    # Resta corregida: (Importe diferencia) - (Diferencia (antes - acreditar))
-    v_diff_antes = parse_amount_ar(data["Diferencia (antes - acreditar)"])
-    v_diff_importe = parse_amount_ar(data["Importe diferencia"])
-    if v_diff_antes is not None and v_diff_importe is not None:
-        data["Resta: Importe diferencia - Diferencia (antes - acreditar)"] = format_amount_ar_plain(
-            v_diff_importe - v_diff_antes
-        )
+    # SIN IVA = TOTAL CARGA - IVA (o cheque - antes)
+    v_total = parse_amount_ar(data.get("TOTAL CARGA", ""))
+    v_iva = parse_amount_ar(data.get("IVA", ""))
+    if v_total is not None and v_iva is not None:
+        data["SIN IVA"] = format_amount_ar_plain(v_total - v_iva)
+    elif v_cheque is not None and v_pre is not None:
+        data["SIN IVA"] = format_amount_ar_plain(v_cheque - v_pre)
 
     return data
 
 
 def main() -> None:
-    pdf_files = sorted(FOLDER.glob("print-BOL *.pdf"))
+    pdf_files = []
+    pdf_files.extend(FOLDER.glob("print-BOL *.pdf"))
+    input_dir = FOLDER / "input-examples"
+    if input_dir.exists():
+        pdf_files.extend(input_dir.glob("print-BOL *.pdf"))
+    pdf_files = sorted(pdf_files)
     rows: list[dict[str, str]] = []
     for pdf_path in pdf_files:
         try:
@@ -228,9 +233,9 @@ def main() -> None:
             "Codigo de boleto",
             "Fecha de boleto",
             "Importe a acreditar",
-            "Importe diferencia",
-            "Diferencia (antes - acreditar)",
-            "Resta: Importe diferencia - Diferencia (antes - acreditar)",
+            "TOTAL CARGA",
+            "IVA",
+            "SIN IVA",
         ],
     )
 

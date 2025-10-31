@@ -43,9 +43,9 @@ function extractZofingen(text, fileName) {
     "Codigo de boleto": "",
     "Fecha de boleto": "",
     "Importe a acreditar": "",
-    "Importe diferencia": "",
-    "Diferencia (antes - acreditar)": "",
-    "Resta: Importe diferencia - Diferencia (antes - acreditar)": "",
+    "TOTAL CARGA": "",
+    "IVA": "",
+    "SIN IVA": "",
   };
 
   // Codigo de boleto
@@ -129,17 +129,17 @@ function extractZofingen(text, fileName) {
   const vAcred = parseAmountAR(data["Importe a acreditar"]);
   const vPre = parseAmountAR(data["Importe antes de aranceles e IVA"]);
   if (vCheque != null && vAcred != null) {
-    data["Importe diferencia"] = formatAmountARPlain(vCheque - vAcred);
+    data["TOTAL CARGA"] = formatAmountARPlain(vCheque - vAcred);
   }
   if (vPre != null && vAcred != null) {
-    data["Diferencia (antes - acreditar)"] = formatAmountARPlain(vPre - vAcred);
+    data["IVA"] = formatAmountARPlain(vPre - vAcred);
   }
-  const vDiffAntes = parseAmountAR(data["Diferencia (antes - acreditar)"]);
-  const vDiffImporte = parseAmountAR(data["Importe diferencia"]);
-  if (vDiffAntes != null && vDiffImporte != null) {
-    data["Resta: Importe diferencia - Diferencia (antes - acreditar)"] = formatAmountARPlain(
-      vDiffImporte - vDiffAntes
-    );
+  const vTotal = parseAmountAR(data["TOTAL CARGA"]);
+  const vIva = parseAmountAR(data["IVA"]);
+  if (vTotal != null && vIva != null) {
+    data["SIN IVA"] = formatAmountARPlain(vTotal - vIva);
+  } else if (vCheque != null && vPre != null) {
+    data["SIN IVA"] = formatAmountARPlain(vCheque - vPre);
   }
 
   return data;
@@ -204,9 +204,9 @@ const columns = [
   "Codigo de boleto",
   "Fecha de boleto",
   "Importe a acreditar",
-  "Importe diferencia",
-  "Diferencia (antes - acreditar)",
-  "Resta: Importe diferencia - Diferencia (antes - acreditar)",
+  "TOTAL CARGA",
+  "IVA",
+  "SIN IVA",
 ];
 
 function setStatus(msg) {
