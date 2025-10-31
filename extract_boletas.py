@@ -84,6 +84,9 @@ def extract_from_text(text: str) -> dict[str, str]:
         "TOTAL CARGA": "",
         "IVA": "",
         "SIN IVA": "",
+        "ARANCELES CON IVA": "",
+        "IVA ARANCELES": "",
+        "ARANCELES SIN IVA": "",
     }
 
     # Vencimiento (línea completa) y número de ECHEQ
@@ -185,6 +188,18 @@ def extract_from_text(text: str) -> dict[str, str]:
         data["SIN IVA"] = format_amount_ar_plain(sin_iva)
         data["IVA"] = format_amount_ar_plain(v_total - sin_iva)
 
+    # ARANCELES
+    # ARANCELES CON IVA = (Importe antes de aranceles e IVA) - (Importe a acreditar)
+    # IVA ARANCELES = (ARANCELES CON IVA) / 1.21
+    # ARANCELES SIN IVA = (ARANCELES CON IVA) - (IVA ARANCELES)
+    v_pre = parse_amount_ar(data.get("Importe antes de aranceles e IVA", ""))
+    if v_pre is not None and v_acred is not None:
+        aranceles_con_iva = v_pre - v_acred
+        data["ARANCELES CON IVA"] = format_amount_ar_plain(aranceles_con_iva)
+        iva_aranceles = aranceles_con_iva / Decimal("1.21")
+        data["IVA ARANCELES"] = format_amount_ar_plain(iva_aranceles)
+        data["ARANCELES SIN IVA"] = format_amount_ar_plain(aranceles_con_iva - iva_aranceles)
+
     return data
 
 
@@ -232,6 +247,9 @@ def main() -> None:
             "TOTAL CARGA",
             "IVA",
             "SIN IVA",
+            "ARANCELES CON IVA",
+            "IVA ARANCELES",
+            "ARANCELES SIN IVA",
         ],
     )
 

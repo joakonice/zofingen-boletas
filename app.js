@@ -46,6 +46,9 @@ function extractZofingen(text, fileName) {
     "TOTAL CARGA": "",
     "IVA": "",
     "SIN IVA": "",
+    "ARANCELES CON IVA": "",
+    "IVA ARANCELES": "",
+    "ARANCELES SIN IVA": "",
   };
 
   // Codigo de boleto
@@ -139,6 +142,15 @@ function extractZofingen(text, fileName) {
     data["IVA"] = formatAmountARPlain(vTotal - sinIva);
   }
 
+  // Aranceles
+  if (vPre != null && vAcred != null) {
+    const arCon = vPre - vAcred;
+    data["ARANCELES CON IVA"] = formatAmountARPlain(arCon);
+    const ivaAr = arCon / 1.21;
+    data["IVA ARANCELES"] = formatAmountARPlain(ivaAr);
+    data["ARANCELES SIN IVA"] = formatAmountARPlain(arCon - ivaAr);
+  }
+
   return data;
 }
 
@@ -204,6 +216,9 @@ const columns = [
   "TOTAL CARGA",
   "IVA",
   "SIN IVA",
+  "ARANCELES CON IVA",
+  "IVA ARANCELES",
+  "ARANCELES SIN IVA",
 ];
 
 function setStatus(msg) {
@@ -249,6 +264,9 @@ processBtn.addEventListener("click", async () => {
         "TOTAL CARGA": "",
         "IVA": "",
         "SIN IVA": "",
+        "ARANCELES CON IVA": "",
+        "IVA ARANCELES": "",
+        "ARANCELES SIN IVA": "",
       });
     }
   }
