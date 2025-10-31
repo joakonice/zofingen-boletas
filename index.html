@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Extractor de Boletas - ZOFINGEN</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <!-- PDF.js (versión clásica no-ESM para GitHub Pages) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    // Configurar worker de PDF.js
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
+  </script>
+  <!-- SheetJS para generar XLSX en el cliente -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Extractor de Boletas - ZOFINGEN</h1>
+    <p>Subí PDFs de boletas y generá CSV/XLSX con los datos extraídos.</p>
+  </header>
+
+  <main>
+    <section class="controls">
+      <div class="input-row">
+        <label for="pdfFiles">Seleccionar PDF(s):</label>
+        <input type="file" id="pdfFiles" accept="application/pdf" multiple />
+      </div>
+
+      <div class="input-row">
+        <label for="parserSelect">Tipo de PDF:</label>
+        <select id="parserSelect">
+          <option value="ZOFINGEN" selected>ZOFINGEN</option>
+          <!-- A futuro: agregar otras financieras -->
+        </select>
+      </div>
+
+      <div class="actions">
+        <button id="processBtn">Procesar</button>
+        <button id="downloadCsvBtn" disabled>Descargar CSV</button>
+        <button id="downloadXlsxBtn" disabled>Descargar XLSX</button>
+      </div>
+    </section>
+
+    <section class="status">
+      <h2>Estado</h2>
+      <div id="statusArea" class="status-area">Listo.</div>
+      <div id="summaryArea" class="summary-area"></div>
+    </section>
+  </main>
+
+  <footer>
+    <small>Diseñado para GitHub Pages. Soporta ZOFINGEN por ahora, extensible a futuro.</small>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+ </html>
+
+
