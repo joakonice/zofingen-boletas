@@ -249,9 +249,9 @@ processBtn.addEventListener("click", async () => {
         "Codigo de boleto": `(error) ${file.name}`,
         "Fecha de boleto": "",
         "Importe a acreditar": "",
-        "Importe diferencia": "",
-        "Diferencia (antes - acreditar)": "",
-        "Resta: Importe diferencia - Diferencia (antes - acreditar)": "",
+        "TOTAL CARGA": "",
+        "IVA": "",
+        "SIN IVA": "",
       });
     }
   }
