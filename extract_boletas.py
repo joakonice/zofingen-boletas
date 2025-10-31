@@ -177,17 +177,13 @@ def extract_from_text(text: str) -> dict[str, str]:
         data["TOTAL CARGA"] = format_amount_ar_plain(v_cheque - v_acred)
 
     # Diferencia (antes - acreditar)
-    v_pre = parse_amount_ar(data["Importe antes de aranceles e IVA"])
-    if v_pre is not None and v_acred is not None:
-        data["IVA"] = format_amount_ar_plain(v_pre - v_acred)
-
-    # SIN IVA = TOTAL CARGA - IVA (o cheque - antes)
+    # Reglas solicitadas:
+    # SIN IVA = TOTAL CARGA / 1.21 ; IVA = TOTAL CARGA - SIN IVA
     v_total = parse_amount_ar(data.get("TOTAL CARGA", ""))
-    v_iva = parse_amount_ar(data.get("IVA", ""))
-    if v_total is not None and v_iva is not None:
-        data["SIN IVA"] = format_amount_ar_plain(v_total - v_iva)
-    elif v_cheque is not None and v_pre is not None:
-        data["SIN IVA"] = format_amount_ar_plain(v_cheque - v_pre)
+    if v_total is not None:
+        sin_iva = v_total / Decimal("1.21")
+        data["SIN IVA"] = format_amount_ar_plain(sin_iva)
+        data["IVA"] = format_amount_ar_plain(v_total - sin_iva)
 
     return data
 

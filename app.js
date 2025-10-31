@@ -131,15 +131,12 @@ function extractZofingen(text, fileName) {
   if (vCheque != null && vAcred != null) {
     data["TOTAL CARGA"] = formatAmountARPlain(vCheque - vAcred);
   }
-  if (vPre != null && vAcred != null) {
-    data["IVA"] = formatAmountARPlain(vPre - vAcred);
-  }
+  // Nuevas reglas: SIN IVA = TOTAL CARGA / 1.21 ; IVA = TOTAL CARGA - SIN IVA
   const vTotal = parseAmountAR(data["TOTAL CARGA"]);
-  const vIva = parseAmountAR(data["IVA"]);
-  if (vTotal != null && vIva != null) {
-    data["SIN IVA"] = formatAmountARPlain(vTotal - vIva);
-  } else if (vCheque != null && vPre != null) {
-    data["SIN IVA"] = formatAmountARPlain(vCheque - vPre);
+  if (vTotal != null) {
+    const sinIva = vTotal / 1.21;
+    data["SIN IVA"] = formatAmountARPlain(sinIva);
+    data["IVA"] = formatAmountARPlain(vTotal - sinIva);
   }
 
   return data;
