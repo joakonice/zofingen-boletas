@@ -25,8 +25,14 @@ async function extractTextFromPDF(file) {
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
     const page = await pdf.getPage(pageNum);
     const content = await page.getTextContent();
-    const strings = content.items.map((it) => it.str);
-    allText += strings.join(" ") + "\n"; // simple join
+    let pageText = "";
+    for (const it of content.items) {
+      const s = it.str || "";
+      pageText += s;
+      // cortar línea cuando el motor lo indica (mejor para patrones basados en filas)
+      pageText += it.hasEOL ? "\n" : " ";
+    }
+    allText += pageText + "\n";
   }
   return allText;
 }
@@ -162,7 +168,7 @@ function extractAllaria(text, fileName) {
 
   const items = [];
   // patrón (monto en línea anterior) + precio bruto codigo
-  const tripleRe = /\n\s*(\d{1,3}(?:[\.,]\d{3})+[\.,]\d{4})\s*\n\s*([\d\.,]+)\s+([\d\.,]+)\s+\d{3}\b/g;
+  const tripleRe = /(\d{1,3}(?:[\.,]\d{3})+[\.,]\d{4})\s+([\d\.,]+)\s+([\d\.,]+)\s+\d{3}\b/g;
   let m;
   while ((m = tripleRe.exec(block)) !== null) {
     const monto = parseAmountAR(m[1]);
@@ -170,7 +176,7 @@ function extractAllaria(text, fileName) {
     items.push({ monto, bruto });
   }
   if (!items.length) {
-    const pairs = [...block.matchAll(/\n\s*([\d\.,]+)\s+([\d\.,]+)\s+\d{3}\b/g)];
+    const pairs = [...block.matchAll(/\s+([\d\.,]+)\s+([\d\.,]+)\s+\d{3}\b/g)];
     for (const p of pairs) {
       const bruto = parseAmountAR(p[2]);
       items.push({ monto: null, bruto });
