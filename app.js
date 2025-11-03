@@ -6,12 +6,29 @@ function parseAmountAR(raw) {
   const lastDot = s.lastIndexOf(".");
   const lastComma = s.lastIndexOf(",");
   let norm;
-  if (lastDot !== -1 && lastComma !== -1 && lastDot > lastComma) {
-    // US style: commas as thousands, dot as decimal
-    norm = s.replace(/,/g, "");
-  } else {
-    // AR style: dots as thousands, comma as decimal
+  if (lastDot !== -1 && lastComma !== -1) {
+    // Ambos presentes: decidir por posición
+    if (lastDot > lastComma) {
+      // US style: commas thousands, dot decimal
+      norm = s.replace(/,/g, "");
+    } else {
+      // AR style
+      norm = s.replace(/\./g, "").replace(/,/g, ".");
+    }
+  } else if (lastComma !== -1 && lastDot === -1) {
+    // Solo coma: usar como decimal
     norm = s.replace(/\./g, "").replace(/,/g, ".");
+  } else if (lastDot !== -1 && lastComma === -1) {
+    // Solo punto: si hay 2-4 dígitos a la derecha, tratar como decimal
+    const right = s.length - lastDot - 1;
+    if (right >= 2 && right <= 4) {
+      norm = s.replace(/,/g, "");
+    } else {
+      // improbable, pero tratar punto como miles
+      norm = s.replace(/\./g, "");
+    }
+  } else {
+    norm = s;
   }
   const num = Number(norm);
   return Number.isFinite(num) ? num : null;

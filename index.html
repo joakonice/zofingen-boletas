@@ -53,10 +53,18 @@
   </main>
 
   <footer>
-    <small>Soporta ZOFINGEN y ALLARIA. Detección automática por contenido.</small>
+    <small>Soporta ZOFINGEN y ALLARIA. Detección automática por contenido. | Versión <span id="appVersion"></span></small>
   </footer>
 
-  <script src="./app.js?v=3"></script>
+  <script>window.APP_VERSION = '1.0';</script>
+  <script src="./app.js?v=4"></script>
+  <script>
+    (function(){
+      var v = window.APP_VERSION || '1.0';
+      var el = document.getElementById('appVersion');
+      if (el) el.textContent = v;
+    })();
+  </script>
 </body>
  </html>
 
