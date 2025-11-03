@@ -171,17 +171,31 @@ function extractAllaria(text, fileName) {
   const blockMatch = t.match(/Monto\s+Precio\s+Importe\s+Bruto([\s\S]*?)IMPORTE\s+NETO/i);
   const block = blockMatch ? blockMatch[1] : t;
 
+  // Construcción robusta de ítems por líneas (tolerante a saltos y códigos 3 dígitos)
   const items = [];
-  // patrón (monto en línea anterior) + precio bruto codigo
-  const tripleRe = /(\d{1,3}(?:[\.,]\d{3})+[\.,]\d{4})\s+([\d\.,]+)\s+([\d\.,]+)\s+\d{3}\b/g;
-  let m;
-  while ((m = tripleRe.exec(block)) !== null) {
-    const monto = parseAmountAR(m[1]);
-    const bruto = parseAmountAR(m[3]);
-    items.push({ monto, bruto });
+  let lastMonto = null;
+  const lines = block.split(/\n+/);
+  const montoRe = /\b\d{1,3}(?:[\.,]\d{3})+[\.,]\d{4}\b/;
+  const precioBrutoCodRe = /\b([\d\.,]+)\s+([\d\.,]+)\s+\d{3}\b/;
+  for (const ln of lines) {
+    const l = ln.trim();
+    if (!l) continue;
+    const mm = l.match(montoRe);
+    if (mm) {
+      const v = parseAmountAR(mm[0]);
+      if (v != null) lastMonto = v;
+      continue;
+    }
+    const pb = l.match(precioBrutoCodRe);
+    if (pb) {
+      const bruto = parseAmountAR(pb[2]);
+      items.push({ monto: lastMonto, bruto });
+      lastMonto = null;
+    }
   }
+  // Fallback adicional: pares sueltos (precio bruto codigo) si nada entró
   if (!items.length) {
-    const pairs = [...block.matchAll(/\s+([\d\.,]+)\s+([\d\.,]+)\s+\d{3}\b/g)];
+    const pairs = [...block.matchAll(/\b([\d\.,]+)\s+([\d\.,]+)\s+\d{3}\b/g)];
     for (const p of pairs) {
       const bruto = parseAmountAR(p[2]);
       items.push({ monto: null, bruto });
