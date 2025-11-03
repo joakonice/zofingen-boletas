@@ -254,6 +254,14 @@ function extractAllaria(text, fileName) {
     }
   }
 
+  // Último fallback: para cualquier ítem sin monto pero con precio y bruto, calcularlo
+  for (const it of items) {
+    if ((it.monto == null || !Number.isFinite(it.monto)) && it.bruto != null && it.precio != null && it.precio > 0) {
+      const mcalc = it.bruto / (it.precio / 100);
+      if (Number.isFinite(mcalc)) it.monto = Math.round(mcalc * 10000) / 10000;
+    }
+  }
+
   // Cheques dentro del bloque
   const chq = [...block.matchAll(/CHEQUE\s+(\d{4,8})\s+(\d{2}\/\d{2}\/\d{2,4})/gi)].map((x) => {
     const num = x[1];
