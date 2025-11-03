@@ -188,8 +188,9 @@ function extractAllaria(text, fileName) {
     }
     const pb = l.match(precioBrutoCodRe);
     if (pb) {
+      const precio = parseAmountAR(pb[1]);
       const bruto = parseAmountAR(pb[2]);
-      items.push({ monto: lastMonto, bruto });
+      items.push({ monto: lastMonto, bruto, precio });
       lastMonto = null;
     }
   }
@@ -197,8 +198,9 @@ function extractAllaria(text, fileName) {
   if (!items.length) {
     const pairs = [...block.matchAll(/\b([\d\.,]+)\s+([\d\.,]+)\s+\d{3}\b/g)];
     for (const p of pairs) {
+      const precio = parseAmountAR(p[1]);
       const bruto = parseAmountAR(p[2]);
-      items.push({ monto: null, bruto });
+      items.push({ monto: null, bruto, precio });
     }
   }
 
@@ -219,6 +221,17 @@ function extractAllaria(text, fileName) {
         if (items[0].monto == null) {
           const mVN = t.match(/V\/?N-\s*([\d\.,]+)/i);
           if (mVN) items[0].monto = parseAmountAR(mVN[1]);
+        }
+      } else {
+        // 4) calcular monto a partir de precio y bruto: monto ≈ bruto / (precio/100)
+        for (const idx of needMontoIdx) {
+          const it = items[idx];
+          if (it.monto == null && it.bruto != null && it.precio != null && it.precio > 0) {
+            const montoCalc = it.bruto / (it.precio / 100);
+            if (Number.isFinite(montoCalc)) {
+              it.monto = Math.round(montoCalc * 10000) / 10000; // mantener 4 decimales como en el PDF
+            }
+          }
         }
       }
     }
