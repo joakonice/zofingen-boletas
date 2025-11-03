@@ -202,6 +202,28 @@ function extractAllaria(text, fileName) {
     }
   }
 
+  // Completar montos faltantes (Importe del cheque)
+  if (items.length) {
+    const needMontoIdx = items.map((it, i) => (it.monto == null ? i : -1)).filter((i) => i >= 0);
+    if (needMontoIdx.length) {
+      // 1) intentamos con todos los montos de 4 decimales del bloque
+      const allMontos = (block.match(/\b\d{1,3}(?:[\.,]\d{3})+[\.,]\d{4}\b/g) || []).map(parseAmountAR).filter((v) => v != null);
+      if (allMontos.length === items.length) {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].monto == null) items[i].monto = allMontos[i];
+        }
+      } else if (items.length === 1) {
+        // 2) si hay un único ítem y existe un sólo monto de 4 decimales, usarlo
+        if (allMontos.length === 1) items[0].monto = allMontos[0];
+        // 3) fallback V/N- para nominal único
+        if (items[0].monto == null) {
+          const mVN = t.match(/V\/?N-\s*([\d\.,]+)/i);
+          if (mVN) items[0].monto = parseAmountAR(mVN[1]);
+        }
+      }
+    }
+  }
+
   // Cheques dentro del bloque
   const chq = [...block.matchAll(/CHEQUE\s+(\d{4,8})\s+(\d{2}\/\d{2}\/\d{2,4})/gi)].map((x) => {
     const num = x[1];
