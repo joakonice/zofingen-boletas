@@ -1,10 +1,19 @@
 /* Utilidades de formato */
 function parseAmountAR(raw) {
   if (!raw) return null;
-  const cleaned = String(raw).replace(/[^\d.,-]/g, "");
-  if (!cleaned) return null;
-  const normalized = cleaned.replaceAll(".", "").replace(",", ".");
-  const num = Number(normalized);
+  const s = String(raw).replace(/[^\d\.,-]/g, "");
+  if (!s) return null;
+  const lastDot = s.lastIndexOf(".");
+  const lastComma = s.lastIndexOf(",");
+  let norm;
+  if (lastDot !== -1 && lastComma !== -1 && lastDot > lastComma) {
+    // US style: commas as thousands, dot as decimal
+    norm = s.replace(/,/g, "");
+  } else {
+    // AR style: dots as thousands, comma as decimal
+    norm = s.replace(/\./g, "").replace(/,/g, ".");
+  }
+  const num = Number(norm);
   return Number.isFinite(num) ? num : null;
 }
 
@@ -111,14 +120,12 @@ function extractZofingen(text, fileName) {
     data["Importe a acreditar"] = formatAmountARPlain(val);
   }
 
-  // Importe antes de aranceles e IVA: 1) patrón estricto del script
+  // Importe antes de aranceles e IVA (igual que script)
   let mPre = t.match(/\b[\d\.,]+\s+\d{1,3}%\s+ARS\s+([\d\.,]+)/i);
   if (mPre) {
     const val = parseAmountAR(mPre[1]);
     data["Importe antes de aranceles e IVA"] = formatAmountARPlain(val);
   } else {
-    // 2) Fallback sin usar porcentaje: buscar primera aparición de "ARS <monto>"
-    // entre "U.de Tasa Importe" (o "Liquidación del día") y "Se acreditará".
     let startIdx = t.search(/U\.?\s*de\s*Tasa\s*Importe/i);
     if (startIdx < 0) startIdx = t.search(/Liquidaci[oó]n\s+del\s+d[ií]a/i);
     const endIdx = (() => {
@@ -140,7 +147,6 @@ function extractZofingen(text, fileName) {
   if (vCheque != null && vAcred != null) {
     data["TOTAL CARGA"] = formatAmountARPlain(vCheque - vAcred);
   }
-  // Nuevas reglas: SIN IVA = TOTAL CARGA / 1.21 ; IVA = TOTAL CARGA - SIN IVA
   const vTotal = parseAmountAR(data["TOTAL CARGA"]);
   if (vTotal != null) {
     const sinIva = vTotal / 1.21;
@@ -148,7 +154,6 @@ function extractZofingen(text, fileName) {
     data["IVA"] = formatAmountARPlain(vTotal - sinIva);
   }
 
-  // Aranceles
   if (vPre != null && vAcred != null) {
     const arCon = vPre - vAcred;
     data["ARANCELES CON IVA"] = formatAmountARPlain(arCon);
@@ -274,7 +279,7 @@ function extractAllaria(text, fileName) {
 
 /* Orquestador de parsers (extensible a futuro) */
 const Parsers = {
-  AUTO: null,
+  AUTO: null, // se resuelve en runtime
   ZOFINGEN: extractZofingen,
   ALLARIA: extractAllaria,
 };
