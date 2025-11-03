@@ -154,9 +154,123 @@ function extractZofingen(text, fileName) {
   return data;
 }
 
+/* Parser ALLARIA (multi-cheque, prorrateo de cargos) */
+function extractAllaria(text, fileName) {
+  const t = text.replace(/\u00A0/g, " ");
+  const blockMatch = t.match(/Monto\s+Precio\s+Importe\s+Bruto([\s\S]*?)IMPORTE\s+NETO/i);
+  const block = blockMatch ? blockMatch[1] : t;
+
+  const items = [];
+  // patrón (monto en línea anterior) + precio bruto codigo
+  const tripleRe = /\n\s*(\d{1,3}(?:[\.,]\d{3})+[\.,]\d{4})\s*\n\s*([\d\.,]+)\s+([\d\.,]+)\s+\d{3}\b/g;
+  let m;
+  while ((m = tripleRe.exec(block)) !== null) {
+    const monto = parseAmountAR(m[1]);
+    const bruto = parseAmountAR(m[3]);
+    items.push({ monto, bruto });
+  }
+  if (!items.length) {
+    const pairs = [...block.matchAll(/\n\s*([\d\.,]+)\s+([\d\.,]+)\s+\d{3}\b/g)];
+    for (const p of pairs) {
+      const bruto = parseAmountAR(p[2]);
+      items.push({ monto: null, bruto });
+    }
+  }
+
+  // Cheques dentro del bloque
+  const chq = [...block.matchAll(/CHEQUE\s+(\d{4,8})\s+(\d{2}\/\d{2}\/\d{2,4})/gi)].map((x) => {
+    const num = x[1];
+    let vto = x[2];
+    const yy = vto.split("/").pop();
+    if (yy && yy.length === 2) {
+      const [dd, mm] = vto.split("/");
+      vto = `${dd}/${mm}/20${yy}`;
+    }
+    return { num, vto };
+  });
+
+  // cargos totales
+  const mAr = block.match(/Arancel\s+[^\n]*?\s([\d\.,]+)/i);
+  const mDm = block.match(/D\.?Mercado\s+[^\n]*?\s([\d\.,]+)/i);
+  const mIva = block.match(/IVA\s+s\/\s+[^\n]*?\s21\.?0*%\s+([\d\.,]+)/i);
+  const arTotal = parseAmountAR(mAr && mAr[1]) || 0;
+  const dmTotal = parseAmountAR(mDm && mDm[1]) || 0;
+  const ivaTotal = parseAmountAR(mIva && mIva[1]) || 0;
+
+  // header
+  let code = null, fechaBoleto = "";
+  const hdr = t.match(/\b(\d+)\s+(\d{2}\/\d{2}\/\d{2})\s+(\d{2}\/\d{2}\/\d{2})\s+(\d+)\b/);
+  if (hdr) {
+    code = hdr[4];
+    const [dd, mm, yy] = hdr[3].split("/");
+    fechaBoleto = `${dd}/${mm}/20${yy}`;
+  }
+
+  const sumBrutos = items.reduce((a, it) => a + (it.bruto || 0), 0);
+  const rows = [];
+  let accA = 0, accM = 0, accV = 0;
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    const factor = sumBrutos ? it.bruto / sumBrutos : 0;
+    let a_i = +(arTotal * factor).toFixed(2);
+    let m_i = +(dmTotal * factor).toFixed(2);
+    let v_i = +(ivaTotal * factor).toFixed(2);
+    if (i === items.length - 1) {
+      a_i = +(arTotal - accA).toFixed(2);
+      m_i = +(dmTotal - accM).toFixed(2);
+      v_i = +(ivaTotal - accV).toFixed(2);
+    }
+    accA = +(accA + a_i).toFixed(2);
+    accM = +(accM + m_i).toFixed(2);
+    accV = +(accV + v_i).toFixed(2);
+
+    const impAcred = (it.bruto || 0) - (a_i + m_i + v_i);
+    const cheque = (it.monto != null ? it.monto : null);
+    const totalCarga = cheque != null ? cheque - impAcred : null;
+    const sinIva = totalCarga != null ? totalCarga / 1.21 : null;
+    const ivaTc = totalCarga != null ? totalCarga - sinIva : null;
+
+    const num = chq[i] && chq[i].num ? chq[i].num : "";
+    const vto = chq[i] && chq[i].vto ? chq[i].vto : "";
+
+    rows.push({
+      "Numero de cheque": num ? `ECHEQ ${num}` : "",
+      "Vencimiento": vto,
+      "Importe del cheque": formatAmountARPlain(cheque),
+      "Importe antes de aranceles e IVA": formatAmountARPlain(it.bruto),
+      "Codigo de boleto": code || `ALLARIA ${fileName}`,
+      "Fecha de boleto": fechaBoleto,
+      "Importe a acreditar": formatAmountARPlain(impAcred),
+      "TOTAL CARGA": formatAmountARPlain(totalCarga),
+      "IVA": formatAmountARPlain(ivaTc),
+      "SIN IVA": formatAmountARPlain(sinIva),
+      "ARANCELES CON IVA": formatAmountARPlain(a_i + m_i + v_i),
+      "IVA ARANCELES": formatAmountARPlain((a_i + m_i + v_i) / 1.21),
+      "ARANCELES SIN IVA": formatAmountARPlain((a_i + m_i + v_i) - ((a_i + m_i + v_i) / 1.21)),
+    });
+  }
+  return rows.length ? rows : [{
+    "Numero de cheque": "",
+    "Vencimiento": "",
+    "Importe del cheque": "",
+    "Importe antes de aranceles e IVA": "",
+    "Codigo de boleto": code || `ALLARIA ${fileName}`,
+    "Fecha de boleto": fechaBoleto,
+    "Importe a acreditar": "",
+    "TOTAL CARGA": "",
+    "IVA": "",
+    "SIN IVA": "",
+    "ARANCELES CON IVA": "",
+    "IVA ARANCELES": "",
+    "ARANCELES SIN IVA": "",
+  }];
+}
+
 /* Orquestador de parsers (extensible a futuro) */
 const Parsers = {
+  AUTO: null,
   ZOFINGEN: extractZofingen,
+  ALLARIA: extractAllaria,
 };
 
 /* Exportar CSV y XLSX */
@@ -232,11 +346,6 @@ processBtn.addEventListener("click", async () => {
     return;
   }
   const parserKey = parserSelect.value;
-  const parser = Parsers[parserKey];
-  if (!parser) {
-    setStatus(`Parser no disponible: ${parserKey}`);
-    return;
-  }
   setStatus(`Procesando ${files.length} archivo(s)...`);
   lastRows = [];
 
@@ -245,13 +354,21 @@ processBtn.addEventListener("click", async () => {
     try {
       setStatus(`Leyendo ${file.name} (${i + 1}/${files.length})...`);
       const text = await extractTextFromPDF(file);
-      const record = parser(text, file.name);
-      // Asegurar código de boleto desde nombre si no aparece en texto
-      if (!record["Codigo de boleto"]) {
-        const mFile = file.name.match(/print-BOL\s+(\d{10})/i);
-        if (mFile) record["Codigo de boleto"] = `BOL ${mFile[1]}`;
+      let parser = Parsers[parserKey];
+      if (!parser || parserKey === "AUTO") {
+        if (/ALLARIA\s+AGROFINANZAS/i.test(text) || /Monto\s+Precio\s+Importe\s+Bruto/i.test(text)) parser = extractAllaria;
+        else parser = extractZofingen;
       }
-      lastRows.push(record);
+      const result = parser(text, file.name);
+      const pushWithCode = (rec) => {
+        if (!rec["Codigo de boleto"]) {
+          const mFile = file.name.match(/print-BOL\s+(\d{10})/i);
+          if (mFile) rec["Codigo de boleto"] = `BOL ${mFile[1]}`;
+        }
+        lastRows.push(rec);
+      };
+      if (Array.isArray(result)) result.forEach(pushWithCode);
+      else pushWithCode(result);
     } catch (e) {
       lastRows.push({
         "Numero de cheque": "",

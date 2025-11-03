@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Extractor de Boletas - ZOFINGEN</title>
+  <title>Extractor de Boletas - ZOFINGEN / ALLARIA</title>
   <link rel="stylesheet" href="./styles.css" />
   <!-- PDF.js (versión clásica no-ESM para GitHub Pages) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -18,8 +18,8 @@
 </head>
 <body>
   <header>
-    <h1>Extractor de Boletas - ZOFINGEN</h1>
-    <p>Subí PDFs de boletas y generá CSV/XLSX con los datos extraídos.</p>
+    <h1>Extractor de Boletas - ZOFINGEN / ALLARIA</h1>
+    <p>Subí PDFs de ZOFINGEN o ALLARIA y generá CSV/XLSX con los datos extraídos.</p>
   </header>
 
   <main>
@@ -32,8 +32,9 @@
       <div class="input-row">
         <label for="parserSelect">Tipo de PDF:</label>
         <select id="parserSelect">
-          <option value="ZOFINGEN" selected>ZOFINGEN</option>
-          <!-- A futuro: agregar otras financieras -->
+          <option value="AUTO" selected>Auto</option>
+          <option value="ZOFINGEN">ZOFINGEN</option>
+          <option value="ALLARIA">ALLARIA</option>
         </select>
       </div>
 
@@ -52,7 +53,7 @@
   </main>
 
   <footer>
-    <small>Diseñado para GitHub Pages. Soporta ZOFINGEN por ahora, extensible a futuro.</small>
+    <small>Soporta ZOFINGEN y ALLARIA. Detección automática por contenido.</small>
   </footer>
 
   <script src="./app.js?v=3"></script>
